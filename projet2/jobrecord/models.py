@@ -76,7 +76,7 @@ class JobRecord(models.Model):
     )
     company_size     = models.CharField(max_length=5)
 
-    # Relations ManyToMany pour compétences et secteurs
+    # Relations ManyToMany for skills and industries
     skills   = models.ManyToManyField(Skill,   related_name="jobrecords", blank=True, null=True)
     industries = models.ManyToManyField(Industry, related_name="jobrecords", blank=True, null=True)
     candidate  = models.ForeignKey(

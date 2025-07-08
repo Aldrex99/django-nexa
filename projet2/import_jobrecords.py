@@ -1,10 +1,8 @@
-# import_jobs.py
-
 import os
 import csv
 import django
 
-# 1. Initialisation Django
+# Django initialization
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "projet2.settings")
 django.setup()
 
@@ -21,17 +19,18 @@ def import_csv():
         "locations": 0,
         "contracts": 0,
         "candidates": 0,
-        "records": 0
+        "records": 0,
+        "duplicates": 0
     }
 
     with open(CSV_PATH, newline='', encoding='utf-8') as f:
         reader = csv.DictReader(f)
         for row in reader:
-            # JobTitle
+            # Job_title
             jt, jt_created = JobTitle.objects.get_or_create(title=row["job_title"])
             if jt_created: created["job_titles"] += 1
 
-            # Locations pour employee_residence et company_location
+            # Locations for employee_residence and company_location
             er, er_created = Location.objects.get_or_create(code=row["employee_residence"])
             if er_created: created["locations"] += 1
             cl, cl_created = Location.objects.get_or_create(code=row["company_location"])
@@ -44,7 +43,7 @@ def import_csv():
             )
             if ct_created: created["contracts"] += 1
 
-            # Candidate (si votre CSV contient candidate_name/email/location)
+            # Candidate
             cand, cand_created = Candidate.objects.get_or_create(
                 email=row.get("candidate_email", ""),
                 defaults={
@@ -54,7 +53,7 @@ def import_csv():
             )
             if cand_created: created["candidates"] += 1
 
-            # Création ou récupération de JobRecord
+            # Create or get JobRecord
             record, rec_created = JobRecord.objects.get_or_create(
                 job_title=jt,
                 work_year=int(row["work_year"]),
@@ -74,7 +73,7 @@ def import_csv():
             if rec_created:
                 created["records"] += 1
 
-                # Skills (séparés par ; ou ,)
+                # Skills (split by ; or ,)
                 if (row.get("skills", None)):
                     for skill_name in row["skills"].split(';'):
                         s, _ = Skill.objects.get_or_create(name=skill_name.strip())
@@ -85,10 +84,10 @@ def import_csv():
                     for industry_name in row["industries"].split(';'):
                         i, _ = Industry.objects.get_or_create(name=industry_name.strip())
                         record.industries.add(i)
+            else:
+                created["duplicates"] += 1
 
-            # Fin du traitement de la ligne
-
-    # Affichage du bilan
+    # Print summary of created objects
     print("Import terminé :")
     for k, v in created.items():
         print(f"  • {k} : {v} créé(s)")
