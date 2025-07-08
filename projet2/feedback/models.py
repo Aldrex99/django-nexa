@@ -22,7 +22,7 @@ class Feedback(models.Model):
     created_at   = models.DateTimeField(default=timezone.now)
 
     class Meta:
-        ordering = ('-created_at',)   # les plus récents d’abord
+        ordering = ('-created_at',)
 
     def __str__(self):
         return f"Feedback {self.pk} - {self.rating}/5 pour {self.job}"

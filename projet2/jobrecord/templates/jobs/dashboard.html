@@ -1,4 +1,5 @@
-{% block title %}Tableau de bord des jobs{% endblock%} {% block content %}
+{% extends "base.html" %} {% block title %}Tableau de bord des jobs{% endblock%}
+{% block content %}
 <h1>Statistiques globales des offres</h1>
 <ul>
   <li><strong>Nombre total de jobs :</strong> {{ total_jobs }}</li>
