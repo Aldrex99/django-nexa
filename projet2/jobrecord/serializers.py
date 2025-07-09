@@ -22,7 +22,7 @@ class IndustrySerializer(serializers.ModelSerializer):
 class LocationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Location
-        fields = ['id', 'country', 'city']
+        fields = ['code', 'name']
 
 class JobTitleSerializer(serializers.ModelSerializer):
     class Meta:

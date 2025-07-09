@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'jobrecord',
     'feedback',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
