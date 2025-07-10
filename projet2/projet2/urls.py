@@ -9,4 +9,6 @@ urlpatterns = [
 
     path('api/jobs/',     include('jobrecord.api_urls')),
     path('api/feedback/', include('feedback.api_urls')),
+
+    path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 ]
