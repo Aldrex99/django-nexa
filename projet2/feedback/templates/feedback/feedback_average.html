@@ -1,5 +1,0 @@
-{% extends "base.html" %} {% block content %}
-<h1>Note moyenne pour : {{ job.job_title }}</h1>
-<p><strong>{{ average_rating }}/5</strong></p>
-<p><a href="{% url 'feedback_list' job.pk %}">← Voir les feedbacks</a></p>
-{% endblock %}

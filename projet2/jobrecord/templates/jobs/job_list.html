@@ -22,7 +22,8 @@
     {% for job in jobs %}
     <tr>
       <td style="border: 1px solid gray; padding: 4px">
-        <a href="{% url 'feedback_list' job.pk %}"> {{ job.job_title }}</a>
+        <a href="/feedback/job/{{ job.id }}/feedbacks/page/">
+          {{ job.job_title }}
       </td>
       <td style="border: 1px solid gray; padding: 4px">
         {{ job.company_location }}

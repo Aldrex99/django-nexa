@@ -1,4 +1,13 @@
-* {
+html {
   background-color: rgb(44, 40, 40);
   color: #ffffff;
+}
+
+a {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+a:hover {
+  color: #00a2ff;
 }

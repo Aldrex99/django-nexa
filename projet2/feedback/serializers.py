@@ -19,11 +19,6 @@ class FeedbackSerializer(serializers.ModelSerializer):
     )
 
     author = AuthorSerializer(read_only=True)
-    author_id = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.all(),
-        source='author',
-        write_only=True
-    )
 
     class Meta:
         model = Feedback
