@@ -1,37 +1,29 @@
 {# feedback/job_feedbacks.html #} {% extends "base.html" %} {% block content %}
-<h1>
-  Feedbacks pour : {{ job.job_title }} <span id="feedback-average"></span>
-</h1>
+<h1>Feedbacks pour : {{ job.job_title }} ({{ average_rating }} / 5)</h1>
 
 <div class="filter-container">
-  <label>
-    Note min :
-    <input type="number" id="min-rating" placeholder="1-5" min="1" max="5" />
-  </label>
-  <button id="filter-btn">Filtrer</button>
+  <div class="filter-part">
+    <label> Rechercher : </label>
+    <input
+      type="text"
+      id="search-input"
+      placeholder="Rechercher un feedback..."
+    />
+    <button id="search-btn">Rechercher</button>
+    <label>
+      Note min :
+      <input type="number" id="min-rating" placeholder="1-5" min="1" max="5" />
+    </label>
+    <button id="filter-btn">Filtrer</button>
+  </div>
+  <a href="{% url 'feedback_add_page' job.id %}"> Ajouter un feedback </a>
 </div>
 
 <div class="feedback-container">
   <section id="feedback-list" data-job-id="{{ job.id }}">
     <p>Chargement…</p>
   </section>
-
-  <section>
-    <h2>Ajouter un feedback</h2>
-    <form id="feedback-form">
-      <label for="rating">Note (1-5) :</label>
-      <input type="number" name="rating" min="1" max="5" required id="rating" />
-      <label for="comment">Commentaire :</label>
-      <textarea
-        name="comment"
-        rows="3"
-        required
-        id="comment"
-        placeholder="Votre avis sur cette offre de travail..."
-      ></textarea>
-      <button type="submit">Envoyer</button>
-    </form>
-  </section>
+  <section id="pagination"></section>
 </div>
 
 <script>
@@ -40,10 +32,12 @@
   document.addEventListener("DOMContentLoaded", () => {
     const listDiv = document.getElementById("feedback-list");
     const jobId = listDiv.dataset.jobId;
-    const form = document.getElementById("feedback-form");
-    const averageSpan = document.getElementById("feedback-average");
+    const paginationDiv = document.getElementById("pagination");
     const filterBtn = document.getElementById("filter-btn");
     const minInput = document.getElementById("min-rating");
+    const searchInput = document.getElementById("search-input");
+    const searchBtn = document.getElementById("search-btn");
+    let page = 1;
 
     function apiFetch(url, opts = {}) {
       opts.headers = {
@@ -54,17 +48,22 @@
     }
 
     function loadFeedbacks() {
-      let url = `/api/feedback/feedbacks?job=${jobId}&ordering=-rating`;
+      let url = `/api/feedback/feedbacks?job=${jobId}&ordering=-rating&page=${page}`;
       const min = minInput.value;
       if (min) {
         // ajoute un filtre rating__gte
         url += `&rating__gte=${encodeURIComponent(min)}`;
       }
+      const search = searchInput.value.trim();
+      if (search) {
+        // ajoute un filtre de recherche
+        url += `&search=${encodeURIComponent(search)}`;
+      }
       apiFetch(url)
         .then((r) => r.json())
         .then((json) => {
           listDiv.innerHTML =
-            (json || [])
+            (json.results || [])
               .map(
                 (fb) => `
             <div class="feedback">
@@ -78,12 +77,39 @@
               )
               .join("") || "<p>Aucun feedback.</p>";
 
-          if (json.length > 0) {
-            const totalRating = json.reduce((sum, fb) => sum + fb.rating, 0);
-            const averageRating = (totalRating / json.length).toFixed(2);
-            averageSpan.textContent = `(${averageRating} / 5)`;
-          } else {
-            averageSpan.textContent = "";
+          paginationDiv.innerHTML = "";
+          if (json.next || json.previous) {
+            const pagination = document.createElement("nav");
+            pagination.className = "pagination";
+            pagination.style.textAlign = "center";
+
+            if (json.previous) {
+              const prevLink = document.createElement("button");
+              prevLink.textContent = "« Précédent";
+              prevLink.onclick = () => {
+                page--;
+                loadFeedbacks();
+              };
+              pagination.appendChild(prevLink);
+            }
+
+            const pageInfo = document.createElement("span");
+            pageInfo.textContent = `Page ${page} sur ${
+              json.count ? Math.ceil(json.count / 10) : 1
+            }`;
+            pagination.appendChild(pageInfo);
+
+            if (json.next) {
+              const nextLink = document.createElement("button");
+              nextLink.textContent = "Suivant »";
+              nextLink.onclick = () => {
+                page++;
+                loadFeedbacks();
+              };
+              pagination.appendChild(nextLink);
+            }
+
+            paginationDiv.appendChild(pagination);
           }
         })
         .catch(
@@ -94,23 +120,14 @@
         );
     }
 
-    filterBtn.addEventListener("click", loadFeedbacks);
+    filterBtn.addEventListener("click", () => {
+      page = 1;
+      loadFeedbacks();
+    });
 
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const data = new FormData(form);
-      data.append("job_id", jobId);
-
-      apiFetch("/api/feedback/feedbacks/", {
-        method: "POST",
-        body: data,
-      })
-        .then((res) => {
-          if (!res.ok) throw new Error("Erreur création");
-          form.reset();
-          loadFeedbacks();
-        })
-        .catch((err) => (console.error(err), alert(err)));
+    searchBtn.addEventListener("click", () => {
+      page = 1;
+      loadFeedbacks();
     });
 
     loadFeedbacks();
@@ -121,24 +138,25 @@
   .filter-container {
     margin-bottom: 20px;
     display: flex;
-    gap: 10px;
+    justify-content: space-between;
     align-items: center;
     background-color: #333;
     border-radius: 5px;
     padding: 20px;
   }
 
-  .feedback-container {
+  .filter-part {
     display: flex;
-    width: 100%;
     gap: 20px;
   }
 
-  .feedback-container section {
-    flex: 1;
+  .feedback-container {
+    display: flex;
+    flex-direction: column;
     background-color: #333;
     padding: 20px;
     border-radius: 5px;
+    gap: 10px;
   }
 
   .feedback {
@@ -159,10 +177,18 @@
     margin-bottom: 5px;
   }
 
-  #feedback-form {
+  .pagination {
     display: flex;
-    flex-direction: column;
+    justify-content: center;
     gap: 10px;
+  }
+
+  .pagination button {
+    background-color: #444;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
   }
 </style>
 {% endblock %}

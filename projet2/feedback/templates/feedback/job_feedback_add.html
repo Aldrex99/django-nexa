@@ -1,0 +1,98 @@
+{% extends "base.html" %} {% block content %}
+<h1>Ajouter un feedback pour : {{ job.job_title }}</h1>
+
+<form id="feedback-form" data-job-id="{{ job.id }}">
+  <label for="rating">Note (1-5) :</label>
+  <input type="number" name="rating" min="1" max="5" required id="rating" />
+
+  <label for="comment">Commentaire :</label>
+  <textarea
+    name="comment"
+    rows="3"
+    required
+    id="comment"
+    placeholder="Votre avis sur cette offre..."
+  ></textarea>
+
+  <button type="submit">Envoyer</button>
+</form>
+
+<p>
+  <a href="{% url 'feedbacks_page' job.id %}">
+    ← Retour à la liste des feedbacks
+  </a>
+</p>
+
+<script>
+  const TOKEN = "{{ request.user.auth_token.key }}";
+  document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("feedback-form");
+    const jobId = form.dataset.jobId;
+
+    function apiFetch(url, opts = {}) {
+      opts.headers = {
+        Authorization: `Token ${TOKEN}`,
+        ...(opts.headers || {}),
+      };
+      return fetch(url, opts);
+    }
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const data = new FormData(form);
+      data.append("job_id", jobId);
+
+      apiFetch("/api/feedback/feedbacks/", {
+        method: "POST",
+        body: data,
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error("Erreur lors de l'enregistrement");
+          // redirige vers la liste
+          window.location.href = "{% url 'feedbacks_page' job.id %}";
+        })
+        .catch((err) => {
+          console.error(err);
+          alert(err.message);
+        });
+    });
+  });
+</script>
+
+<style>
+  #feedback-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 600px;
+    margin: auto;
+  }
+
+  #feedback-form label {
+    font-weight: bold;
+  }
+
+  #feedback-form input,
+  #feedback-form select,
+  #feedback-form textarea {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+  }
+
+  #feedback-form button {
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+  }
+
+  #feedback-form button:hover {
+    background-color: #45a049;
+  }
+  #feedback-form p {
+    margin-top: 10px;
+  }
+</style>
+{% endblock %}

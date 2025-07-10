@@ -8,8 +8,6 @@ from .serializers import FeedbackSerializer
 class FeedbackViewSet(viewsets.ModelViewSet):
     queryset = Feedback.objects.select_related('job', 'author').all()
     serializer_class = FeedbackSerializer
-    
-    pagination_class = None  # Disable pagination for this viewset for average calculation
 
     permission_classes = [IsAuthenticated]
 
