@@ -1,11 +1,148 @@
-{% extends "base.html" %} {% block title %}Tableau de bord des jobs{% endblock%}
-{% block content %}
-<h1>Statistiques globales des offres</h1>
-<ul>
-  <li><strong>Nombre total de jobs :</strong> {{ total_jobs }}</li>
-  <li>
-    <strong>Salaire moyen global (USD) :</strong> {{ avg_salary|floatformat:2 }}
-  </li>
-  <li><strong>Nombre de pays couverts :</strong> {{ num_countries }}</li>
-</ul>
+{% extends "base.html" %} {% block content %}
+<h1>Dashboard des feedbacks</h1>
+<button id="load-dashboard">Charger les stats</button>
+<table id="dashboard-table" class="mt-4 border-collapse w-full">
+  <thead>
+    <tr>
+      <th class="border px-2">Poste</th>
+      <th class="border px-2">Note moyenne</th>
+      <th class="border px-2">Nombre de feedbacks</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+<div id="dashboard-page">
+  <button id="prev-page" disabled>Page précédente</button>
+  <span id="page-info"></span>
+  <button id="next-page" disabled>Page suivante</button>
+</div>
+
+<script>
+  const TOKEN = "{{ request.user.auth_token.key }}";
+  function apiFetch(url, opts = {}) {
+    opts.headers = {
+      Authorization: `Token ${TOKEN}`,
+      ...(opts.headers || {}),
+    };
+    return fetch(url, opts);
+  }
+
+  let page = 1;
+  const PAGESIZE = 10;
+
+  document.addEventListener("DOMContentLoaded", () => {
+    let currentUrl = "/api/jobs/dashboard?page=" + page;
+    const loadBtn = document.getElementById("load-dashboard");
+    const prevBtn = document.getElementById("prev-page");
+    const nextBtn = document.getElementById("next-page");
+    const infoSpan = document.getElementById("page-info");
+    const tbody = document.querySelector("#dashboard-table tbody");
+
+    function renderPage(data) {
+      tbody.innerHTML =
+        data.results
+          .map(
+            (item) => `
+          <tr>
+            <td class="border px-2">${item.job_title}</td>
+            <td class="border px-2">${
+              item.avg_rating?.toFixed(2) || "0.00"
+            }</td>
+            <td class="border px-2">${item.feedback_count}</td>
+          </tr>
+        `
+          )
+          .join("") || '<tr><td colspan="3">Aucun résultat</td></tr>';
+
+      prevBtn.disabled = !data.previous;
+      nextBtn.disabled = !data.next;
+      infoSpan.textContent = `Page ${page} de ${Math.ceil(
+        data.count / PAGESIZE
+      )}`;
+
+      prevBtn.dataset.url = data.previous;
+      nextBtn.dataset.url = data.next;
+    }
+
+    function load(url) {
+      apiFetch(url)
+        .then((r) => r.json())
+        .then(renderPage)
+        .catch(() => alert("Erreur de chargement"));
+    }
+
+    loadBtn.addEventListener("click", () => load(currentUrl));
+    prevBtn.addEventListener("click", () => {
+      if (prevBtn.dataset.url) {
+        currentUrl = prevBtn.dataset.url;
+        page--;
+        load(currentUrl);
+      }
+    });
+    nextBtn.addEventListener("click", () => {
+      if (nextBtn.dataset.url) {
+        currentUrl = nextBtn.dataset.url;
+        page++;
+        load(currentUrl);
+      }
+    });
+  });
+</script>
+
+<style>
+  #dashboard-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  #dashboard-table th,
+  #dashboard-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+  }
+
+  #load-dashboard {
+    margin-bottom: 20px;
+    padding: 10px 15px;
+    border: none;
+    cursor: pointer;
+  }
+
+  #load-dashboard:hover {
+    background-color: #f0f0f0;
+  }
+
+  #prev-page,
+  #next-page {
+    padding: 5px 10px;
+    border: none;
+    cursor: pointer;
+  }
+
+  #prev-page:disabled,
+  #next-page:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+
+  #prev-page:hover:not(:disabled),
+  #next-page:hover:not(:disabled) {
+    background-color: #e0e0e0;
+  }
+
+  #page-info {
+    margin: 0 10px;
+    font-weight: bold;
+  }
+
+  #dashboard-page {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    padding: 0px;
+    border: none;
+    margin-top: 20px;
+  }
+</style>
 {% endblock %}

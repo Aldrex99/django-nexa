@@ -2,30 +2,13 @@ from django.shortcuts import render
 from django.db.models import Count, Avg
 from django.core.paginator import Paginator
 from .models import JobRecord
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from .forms import JobRecordForm
 
+@login_required
 def dashboard(request):
-    total_jobs = JobRecord.objects.count()
-
-    avg_data = JobRecord.objects.aggregate(avg_usd=Avg('salary_in_usd'))
-    avg_salary = avg_data['avg_usd'] or 0
-
-    res_codes = set(
-        JobRecord.objects
-                 .exclude(employee_residence__isnull=True)
-                 .values_list('employee_residence__code', flat=True)
-    )
-    comp_codes = set(
-        JobRecord.objects
-                 .exclude(company_location__isnull=True)
-                 .values_list('company_location__code', flat=True)
-    )
-    num_countries = len(res_codes.union(comp_codes))
-
-    return render(request, 'jobs/dashboard.html', {
-        'total_jobs': total_jobs,
-        'avg_salary': avg_salary,
-        'num_countries': num_countries,
-    })
+    return render(request, 'jobs/dashboard.html')
 
 def job_list(request):
     qs = (
@@ -51,3 +34,14 @@ def job_list(request):
         'jobs': page_obj,
         'page_obj': page_obj,
     })
+
+@login_required
+def job_create(request):
+    if request.method == 'POST':
+        form = JobRecordForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('jobs:job_list')
+    else:
+        form = JobRecordForm()
+    return render(request, 'jobs/job_create.html', {'form': form})

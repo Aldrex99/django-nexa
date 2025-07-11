@@ -1,3 +1,5 @@
+from django.urls import path
+from .api_views  import DashboardAPIView
 from rest_framework.routers import DefaultRouter
 from .viewsets import (
     ContractViewSet, SkillViewSet, IndustryViewSet,
@@ -14,4 +16,6 @@ router.register(r'job-titles', JobTitleViewSet)
 router.register(r'candidates', CandidateViewSet)
 router.register(r'jobs', JobRecordViewSet, basename='jobrecord')
 
-urlpatterns = router.urls
+urlpatterns = router.urls + [
+  path('dashboard/', DashboardAPIView.as_view(), name='dashboard_api'),
+]

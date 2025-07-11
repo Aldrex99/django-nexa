@@ -92,3 +92,10 @@ class JobRecordSerializer(serializers.ModelSerializer):
             'skills', 'skill_ids',
             'industries', 'industry_ids',
         ]
+
+
+class DashboardSerializer(serializers.Serializer):
+    job_title      = serializers.CharField(source='job_title_name')
+    avg_rating     = serializers.FloatField(allow_null=True)
+    feedback_count = serializers.IntegerField()
+
